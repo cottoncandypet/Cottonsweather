@@ -1,0 +1,250 @@
+<html><head><script>
+let params = getParams(window.location.href);
+const maxCloudSize = params['maxCloudSize'] ? parseInt(params['maxCloudSize']) : 400;
+const minCloudSize = params['minCloudSize'] ? parseInt(params['minCloudSize']) : 40;
+const maxCloudSpeed = params['maxCloudSpeed'] ? parseInt(params['maxCloudSpeed']) : 40;
+const minCloudSpeed = params['minCloudSpeed'] ? parseInt(params['minCloudSpeed']) : 5;
+const cloudSpawningDelay = params['cloudSpawningDelay'] ? parseInt(params['cloudSpawningDelay']) : 1000; // 1sec between each cloud spawn
+const initialClouds = params['initialClouds'] ? parseInt(params['initialClouds']) : 10;
+const maxCloudsOnScreen = params['maxCloudsOnScreen'] ? parseInt(params['maxCloudsOnScreen']) : 20;
+const rainCheckDelay = params['rainCheckDelay'] ? parseInt(params['rainCheckDelay']) : 1000; // 1sec between each raincheck
+const weatherCooldownTime = params['weatherCooldownTime'] ? parseInt(params['weatherCooldownTime']) : 30000; // 10sec cooldown default
+const weatherChangeChance = params['rainChance'] ? parseInt(params['rainChance']) : 900; // A number is randomly selected between 0-1000, if its larger than this, weather changes
+let weatherType = 1;
+let weatherCooldown = false;
+
+let cloudCounter = 0;
+const colors = [
+"Cloud1",
+"Cloud2",
+"Cloud3",
+"Cloud4"
+];
+const colors2 = [
+"ThunderCloud",
+"GreyCloud"
+]
+
+function makeCloud() {
+  console.log("CloudCounter: ", cloudCounter, " maxClouds: ", maxCloudsOnScreen, (cloudCounter > maxCloudsOnScreen));
+  if(cloudCounter > maxCloudsOnScreen) return;
+  cloudCounter++;
+  let cloudArray = weatherType === 1 ? colors:colors2;
+  let color = cloudArray[Math.floor(Math.random() * cloudArray.length)];
+  let speedSizeRandom = Math.random();
+  let size = (speedSizeRandom * (maxCloudSize - minCloudSize) + minCloudSize);
+  let speed =  (speedSizeRandom * (maxCloudSpeed - minCloudSpeed) + minCloudSpeed);
+  let direction = Math.round(Math.random());
+  let position = speedSizeRandom * (100 - 0) + 0;
+
+  console.log("Our new Cloud: ",color, size, speed, direction, position);
+  //console.log(cloudContainer);
+  let cloud = document.createElement("img");
+  cloud.setAttribute("src", color+".png");
+  cloud.classList.toggle('cloud');
+  if(weatherType === 1) {
+    cloud.classList.toggle('light_cloud');
+  } else if(weatherType === 2) {
+    cloud.classList.toggle('dark_cloud');
+  }
+  cloud.style = "top: "+position+"%; left: "+(direction?"-20%":"120%")+"; animation-name:"+(direction?"right":"left")+"; animation-duration:"+speed+"s; width:"+size+"px;"+(!direction?"transform: scaleX(-1);":"");
+  setTimeout(deleteCloud.bind(this, cloud), speed*1000);
+  cloudContainer.appendChild(cloud);
+}
+
+function setSunPos() {
+  // Get time of day and position of sun?
+}
+
+function deleteCloud(cloud) {
+  cloud.parentNode.removeChild(cloud);
+  cloudCounter--;
+}
+
+function checkForRain() {
+  if(weatherCooldown) return; // If on the cooldown, ignore the check
+  let weatherSwap = Math.random() * 1000 > weatherChangeChance;
+  console.log("weatherSwap: ",  weatherSwap);
+
+  // Ok We gonna swap the weather
+  if(weatherSwap) {
+    // Rain status have changed toggle the class
+    body.classList.toggle('rain');
+    weatherType = weatherType === 1 ? 2 : 1;
+    // Start a cooldown so weather can't change again for a while
+    weatherCooldown = true;
+    setTimeout(function() {
+      weatherCooldown = false;
+    }, weatherCooldownTime);
+    console.log("New Weather: ", weatherType, weatherType===1?"Clear":"Rain");
+  }
+}
+
+function createInitialBatch() {
+  for(let i = 0; i < initialClouds; i++) {
+    makeCloud();
+  }
+}
+
+function main() {
+  createInitialBatch();
+  setInterval(makeCloud, cloudSpawningDelay);
+  setInterval(checkForRain, rainCheckDelay);
+}
+
+function getParams(url) {
+	let params = {};
+	let parser = document.createElement('a');
+	parser.href = url;
+	let query = parser.search.substring(1);
+	let vars = query.split('&');
+	for (let i = 0; i < vars.length; i++) {
+		let pair = vars[i].split('=');
+		params[pair[0]] = decodeURIComponent(pair[1]);
+	}
+	return params;
+};
+</script>
+
+<style>
+  body {
+    overflow: hidden;
+  }
+  body.rain {
+    /* background-color: #04090F; */
+  }
+  #sun {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    animation: sunOrbit 120s linear infinite;
+  }
+  body.rain #sun {
+    filter: brightness(0.5);
+  }
+  #moon {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    animation: moonOrbit 8s linear infinite;
+
+    border-radius: 50%;
+    background-color: grey;
+    width: 50px;
+    height: 50px;
+    display: none;
+  }
+
+  .cloud {
+    position: absolute;
+    animation-timing-function: linear;
+    z-index: 1;
+  }
+  body.rain .cloud.light_cloud {
+    filter: brightness(0.5);
+  }
+  body:not(.rain) .cloud.dark_cloud {
+    /* filter: brightness(2); */
+  }
+
+  #text {
+    display: none;
+    z-index: 10;
+    position: relative;
+    color: #fcd7f8;
+    font-size: 20px;
+    font-family: Segoe UI Black, sans-serif;
+    padding-left: 30px;
+    text-shadow: 1px 1px 0 #eb99ff,
+    -1px 1px 0 #eb99ff,
+    1px -1px 0 #eb99ff,
+    -1px -1px 0 #eb99ff,
+    0px 1px 0 #eb99ff,
+    0px -1px 0 #eb99ff,
+    -1px 0px 0 #eb99ff,
+    1px 0px 0 #eb99ff,
+    2px 2px 0 #eb99ff,
+    -2px 2px 0 #eb99ff,
+    2px -2px 0 #eb99ff,
+    -2px -2px 0 #eb99ff,
+    0px 2px 0 #eb99ff,
+    0px -2px 0 #eb99ff,
+    -2px 0px 0 #eb99ff,
+    2px 0px 0 #eb99ff,
+    1px 2px 0 #eb99ff,
+    -1px 2px 0 #eb99ff,
+    1px -2px 0 #eb99ff,
+    -1px -2px 0 #eb99ff,
+    2px 1px 0 #eb99ff,
+    -2px 1px 0 #eb99ff,
+    2px -1px 0 #eb99ff,
+    -2px -1px 0 #eb99ff;
+  }
+  #text li.done {
+    text-decoration: line-through;
+  }
+
+  @keyframes right {
+      from { left: 120% }
+      to { left: -20%; }
+  }
+  @keyframes left {
+      from { left: -20% }
+      to { left: 120% }
+  }
+
+  @keyframes sunOrbit {
+    from { transform: rotate(0deg) translateX(1400px) rotate(0deg); }
+    to   { transform: rotate(-360deg) translateX(1400px) rotate(360deg); }
+  }
+  @keyframes moonOrbit {
+    from { transform: rotate(0deg) translateX(500px) rotate(0deg); }
+    to   { transform: rotate(360deg) translateX(500px) rotate(-360deg); }
+  }
+
+  #stars {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+</style>
+</head><body class=""><iframe id="stars" src="/stars1.html"></iframe>
+<img id="sun" src="LarvigSol.png">
+<div id="moon"></div>
+<div id="cloudcontainer"><img src="Cloud3.png" class="cloud light_cloud" style="top: 74.7596%; left: -20%; animation-name: right; animation-duration: 31.1659s; width: 309.135px;"><img src="Cloud1.png" class="cloud light_cloud" style="top: 91.2461%; left: 120%; animation-name: left; animation-duration: 36.9361s; width: 368.486px; transform: scaleX(-1);"><img src="Cloud4.png" class="cloud light_cloud" style="top: 59.6725%; left: -20%; animation-name: right; animation-duration: 25.8854s; width: 254.821px;"><img src="Cloud1.png" class="cloud light_cloud" style="top: 70.4176%; left: -20%; animation-name: right; animation-duration: 29.6462s; width: 293.503px;"><img src="Cloud3.png" class="cloud light_cloud" style="top: 64.9637%; left: -20%; animation-name: right; animation-duration: 27.7373s; width: 273.869px;"><img src="Cloud3.png" class="cloud light_cloud" style="top: 58.0761%; left: -20%; animation-name: right; animation-duration: 25.3266s; width: 249.074px;"><img src="Cloud2.png" class="cloud light_cloud" style="top: 82.8708%; left: 120%; animation-name: left; animation-duration: 34.0048s; width: 338.335px; transform: scaleX(-1);"><img src="Cloud2.png" class="cloud light_cloud" style="top: 39.7805%; left: -20%; animation-name: right; animation-duration: 18.9232s; width: 183.21px;"><img src="Cloud2.png" class="cloud light_cloud" style="top: 90.5293%; left: 120%; animation-name: left; animation-duration: 36.6853s; width: 365.905px; transform: scaleX(-1);"><img src="Cloud1.png" class="cloud light_cloud" style="top: 65.5712%; left: 120%; animation-name: left; animation-duration: 27.9499s; width: 276.056px; transform: scaleX(-1);"><img src="Cloud1.png" class="cloud light_cloud" style="top: 36.5284%; left: 120%; animation-name: left; animation-duration: 17.785s; width: 171.502px; transform: scaleX(-1);"><img src="Cloud4.png" class="cloud light_cloud" style="top: 58.7881%; left: -20%; animation-name: right; animation-duration: 25.5758s; width: 251.637px;"><img src="Cloud1.png" class="cloud light_cloud" style="top: 96.3284%; left: -20%; animation-name: right; animation-duration: 38.7149s; width: 386.782px;"><img src="Cloud3.png" class="cloud light_cloud" style="top: 93.5778%; left: -20%; animation-name: right; animation-duration: 37.7522s; width: 376.88px;"><img src="Cloud1.png" class="cloud light_cloud" style="top: 41.9143%; left: -20%; animation-name: right; animation-duration: 19.67s; width: 190.891px;"><img src="Cloud2.png" class="cloud light_cloud" style="top: 38.1028%; left: 120%; animation-name: left; animation-duration: 18.336s; width: 177.17px; transform: scaleX(-1);"><img src="Cloud4.png" class="cloud light_cloud" style="top: 85.766%; left: -20%; animation-name: right; animation-duration: 35.0181s; width: 348.758px;"><img src="Cloud4.png" class="cloud light_cloud" style="top: 41.787%; left: 120%; animation-name: left; animation-duration: 19.6255s; width: 190.433px; transform: scaleX(-1);"><img src="Cloud2.png" class="cloud light_cloud" style="top: 71.8447%; left: 120%; animation-name: left; animation-duration: 30.1457s; width: 298.641px; transform: scaleX(-1);"><img src="Cloud2.png" class="cloud light_cloud" style="top: 53.6183%; left: 120%; animation-name: left; animation-duration: 23.7664s; width: 233.026px; transform: scaleX(-1);"><img src="Cloud2.png" class="cloud light_cloud" style="top: 28.3221%; left: 120%; animation-name: left; animation-duration: 14.9127s; width: 141.96px; transform: scaleX(-1);"></div>
+<div id="text">
+  <ol>
+    <lh>Do your good night routies :D</lh>
+    <li class="done">Go out with Pixie</li>
+    <li class="done">Sleep Medication</li>
+    <li class="done">Got out with Pixie</li>
+    <li class="done">Take off accessories</li>
+    <li class="done">Sleep Medication</li>
+    <li class="done">Brush teeth</li>
+    <li class="done">Wipe off make up</li>
+    <li class="done">Face cream</li>
+    <li class="done">Toilet</li>
+    <li>Kigurumi</li>
+    <li>Drink water &amp; stretch</li>
+    <li>Clean up stuff</li>
+    <li>Close windows (autumn &amp; winter)</li>
+    <li>Take away blanket</li>
+    <li>Fill water mug</li>
+    <li>Charge mobile phone &amp; power bank</li>
+    <li>Check if door is locked</li>
+    <li>Turn off stream and say good night ^o^</li>
+    <li>Listen to audiobook, play Animal Crossing, massage &amp; fall asleep</li>
+  <ol>
+</ol></ol></div>
+<iframe id="stars" src="/snow1.html"></iframe>
+
+<script>
+  let cloudContainer = document.getElementById("cloudcontainer");
+  let body = document.getElementsByTagName("BODY")[0];
+
+  main();
+
+</script>
+</body></html>
